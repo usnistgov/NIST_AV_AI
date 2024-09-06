@@ -1,7 +1,7 @@
 from cv_app.cv_head.cv_head import UltralyticsDetector
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import qos_profile_sensor_data
+from rclpy.qos import SensorDataQoS
 from sensor_msgs.msg import Image
 from std_msgs.msg import String
 from cv_bridge import CvBridge
@@ -17,10 +17,12 @@ class ImageSubscriber(Node):
         # one for the subscriber and one for the computer vision application
         self.group1 = MutuallyExclusiveCallbackGroup()
         self.group2 = MutuallyExclusiveCallbackGroup()
+
+        qos_profile = SensorDataQoS()
         
         self.current_frame = None
         
-        self.topic = 'camera_sensor_stream/images'
+        self.topic = 'arena_camera_node/images'
         self.queue = 10
         
         # subscribe to the camera sensor stream
@@ -28,6 +30,7 @@ class ImageSubscriber(Node):
             Image,
             self.topic,
             self.camera_image_subscriber,
+            qos_profile,
             self.queue,
             callback_group=self.group1
         )
