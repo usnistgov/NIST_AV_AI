@@ -7,6 +7,7 @@ from std_msgs.msg import String
 from cv_bridge import CvBridge
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
+import cv2
 
 class ImageSubscriber(Node):
 
@@ -36,7 +37,7 @@ class ImageSubscriber(Node):
         )
         
         # timer to execute the cv detector every 0.1 seconds
-        self.timer = self.create_timer(0.06, 
+        self.timer = self.create_timer(0.05, 
                                        self.client_cv_application, 
                                        callback_group=self.group2)
 
@@ -112,7 +113,10 @@ class ImageSubscriber(Node):
         Args:
             data (Image): The image data received from the camera sensor stream.
         """
-        self.current_frame = self.bridge.imgmsg_to_cv2(data, 'bgr8')
+        current_frame = self.bridge.imgmsg_to_cv2(data, 'bgr8')
+        current_frame = cv2.rotate(current_frame, cv2.ROTATE_180)
+        self.current_frame = current_frame[:620, :]
+
         
         # # perform computer vision tasks
         # self.cv_head.detector(current_frame, "img" + str(self.counter))   
