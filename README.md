@@ -1,5 +1,14 @@
 # NIST Autonomous Vehicle AI Codebase for Nuvo PC
+## ROS-based architecture with dual-component behavior
+### <ins>1. Subscriber</ins> - consumes input data from multiple sources
+* Real-vehicle data and simulated data for testing
+  * Consume real-vehicle sensor data for testing 
+  * Consume synthetic image data from CARLA simulation tool to efficiently mimic different real-world conditions
+  * Use rosbags when appriate with vehicle sensor data to emulate vehicle integration.
+### <ins>2. Publisher</ins> - publishes processed data from AI models to real vehicle via on-board PC
 
+* Annotated AI perception output 
+* Real-vehicle control based on AI perception output (work in progress)
 
 ### Package name: cv_app
 
