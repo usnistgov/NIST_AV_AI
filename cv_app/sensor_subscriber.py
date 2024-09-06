@@ -37,7 +37,6 @@ class ImageSubscriber(Node):
             self.topic,
             self.camera_image_subscriber,
             qos_profile,
-            self.queue,
             callback_group=self.group1
         )
         
