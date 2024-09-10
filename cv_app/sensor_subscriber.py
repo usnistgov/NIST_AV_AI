@@ -9,6 +9,9 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallb
 from rclpy.executors import MultiThreadedExecutor
 import cv2
 
+# stop sign queue for detection
+STOP_QUEUE = 3
+
 class ImageSubscriber(Node):
 
     def __init__(self, name):
@@ -65,17 +68,8 @@ class ImageSubscriber(Node):
 
         # counter to keep track of files 
         self.counter = 0
-    
-    def publish_on_vehicle(self, annotated_image, stop_cmd):
-        """Function to publish data on the vehicle for motion control(only braking at this point).
-        
-        Performs the following tasks:
-        1. Publishes annotated image data after classification on topic 'annotated_output/Images'
-        2. Publishes stop command using logic in cv_head.detector on topic '/stopsign_detector/cmd_stop'
-
-        """
-        pass
-
+        self.stop_counter = 0
+        self.stop_bool = False
 
     def client_cv_application(self):
         """Callback function to execute the computer vision application.
@@ -94,22 +88,34 @@ class ImageSubscriber(Node):
         # annotated image and stop parameter
         _image, _stop = self.cv_head.detector(self.current_frame, "img" + str(self.counter))   
         #print(self.counter, _image.shape, _stop)
+        # increment counter when stop sign is detected else resets to zero
+        if _stop == "stop":
+            self.stop_counter += 1
+        else:
+            self.stop_counter = 0 # _stop == "pass"
+            self.stop_bool = False # resets bool 
         
         # increment counter after processing the image
         self.counter += 1
 
-        # Stop command
-        stop_msg = String()
-        stop_msg.data = _stop
-        self.stopcmd_publisher.publish(stop_msg)
-        self.get_logger().info('Published stop message...')
-
         # Annotated images
         annotated_msg = self.bridge.cv2_to_imgmsg(_image, encoding="bgr8")
         self.annotated_publisher.publish(annotated_msg)
-        self.get_logger().info('Published annotated image...') 
-        # call function to publish on vehicle
-        #publish_on_vehicle(_image, _stop)
+        # self.get_logger().info('Published annotated image...')    
+
+        # Stop command
+        stop_msg = String()
+        # logic to send stop once every 3 stop messages (STOP_QUEUE = 3)
+        if self.stop_counter == STOP_QUEUE and self.stop_bool == False:  
+            stop_msg.data = _stop
+            self.stopcmd_publisher.publish(stop_msg)
+            self.stop_bool = True # true when stop is published
+            # self.get_logger().info('Published STOP...')
+            self.get_logger().info(f'STOP BOOL : {self.stop_bool}...STOP MSG: {stop_msg.data}....STOP COUNTER: {self.stop_counter} ') 
+        
+        if self.stop_counter > STOP_QUEUE: 
+                self.stop_counter = 0 # reset stop counter after
+
 
     def camera_image_subscriber(self, data): 
         """Callback function for the subscriber to the camera sensor stream.
