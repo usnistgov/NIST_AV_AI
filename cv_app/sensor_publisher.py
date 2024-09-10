@@ -11,7 +11,7 @@ class ImagePublisher(Node):
     def __init__(self,folder_path):
         super().__init__("image_publisher")
 
-        self.topic = 'camera_sensor_stream/images'
+        self.topic = 'arena_camera_node/images'
         self.queue = 10
 
         self.publisher = self.create_publisher(Image, self.topic, self.queue)
@@ -40,46 +40,18 @@ class ImagePublisher(Node):
         
         self.index += 1
         if self.index >= len(self.files):
-            self.index = 0
-
-class SpeedPublisher(Node):
-    '''
-        This class emulates vehicle speed
-    '''
-    def __init__(self):
-        super().__init__("speed_publisher")
-
-        self.topic = 'vehicle_speed/cmd_vel'
-        self.speed_pub = self.create_publisher(Float64, self.topic, 10)
-        self.speed = 0.0
-        self.timer = self.create_timer(0.5, self.publish_speed) # mimic 20Hz
-        
-    def publish_speed(self):        
-        msg = Float64()
-        # Resets speed after reaching 30
-        if self.speed <= 30.0:
-            self.speed += 1.0      
-        else:
-            self.speed = 0.0
-
-        msg.data = self.speed  
-        self.speed_pub.publish(msg)  
-        self.get_logger().info(f'Publishing vehicle speed: {msg.data}')
-   
+            self.index = 0  
 
 
 def main(args=None):
     rclpy.init(args=args)
     folder_path = './src/cv_app/cv_app/rgb_exp1_graffiti/rgb'
     ip = ImagePublisher(folder_path)
-    speed_publisher = SpeedPublisher()
-    rclpy.spin(speed_publisher)
     if ip.files:
         rclpy.spin(ip)
     
 
     ip.destroy_node()
-    speed_publisher.destroy_node()
     rclpy.shutdown()
 
 if __name__ == '__main__':
