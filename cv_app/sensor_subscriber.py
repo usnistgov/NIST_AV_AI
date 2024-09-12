@@ -64,7 +64,7 @@ class ImageSubscriber(Node):
         self.annotated_publisher = self.create_publisher(Image, '/annotated_output/Images', 10)
 
         # initialize publisher for stop command
-        self.stopcmd_publisher = self.create_publisher(String, '/stopsign_detector/cmd_stop', 10)
+        self.stopcmd_publisher = self.create_publisher(String, '/stop_cmd', 10)
 
         # counter to keep track of files 
         self.counter = 0
