@@ -15,9 +15,9 @@ IMG_FOLDER = 'img'
 
 # car stopping parameters
 STOP_CLASS = 11.0 # coco stop sign class index (should use model.names instead)
-STOP_THRESHOLD = 0.65
+STOP_THRESHOLD = 0.70
 OFFSET = 0
-STOP_AREA = 600
+STOP_AREA = 750
 stop_param = {
     'default': 'pass',
     'stop': 'stop'
