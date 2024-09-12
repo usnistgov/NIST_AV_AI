@@ -14,12 +14,17 @@ LOG = 'log'
 IMG_FOLDER = 'img'
 
 # car stopping parameters
-STOP_CLASS = 11 # coco stop sign class index (should use model.names instead)
-STOP_THRESHOLD = 0.75 # 0.6
+STOP_CLASS = 11.0 # coco stop sign class index (should use model.names instead)
+STOP_THRESHOLD = 0.65
+OFFSET = 0
+STOP_AREA = 600
 stop_param = {
     'default': 'pass',
     'stop': 'stop'
 }
+
+# debug parameters
+DEBUG = True
 
 class UltralyticsDetector:
     def __init__(self, path, save_img=False, save_prediction=False) -> None:
@@ -80,19 +85,27 @@ class UltralyticsDetector:
             conf = result_boxes.conf.numpy().tolist()
             cls_pred = result_boxes.cls.numpy().tolist()
 
-            # stop sign detection 
-            # does not differentiate between correct detection and phantom detection
-            stop_conf_list = [conf[index] for index in [i for i, x in enumerate(cls_pred) if int(x) == STOP_CLASS]]
-
-            if len(stop_conf_list) > 0:
-                if max(stop_conf_list) >= STOP_THRESHOLD:
+            if STOP_CLASS in cls_pred:
+                xyxy = result_boxes.xyxy.numpy().tolist()
+                if self.apply_cvfilter(conf, cls_pred, xyxy, _image.shape[0]):
                     _stop = stop_param['stop']
-                else:
-                    # prediction below threshold => do nothing
-                    pass
-            else:
-                # stop sign not detected => do nothing
-                pass
+
+            # # stop sign detection 
+            # # does not differentiate between correct detection and phantom detection
+            # stop_conf_list = [conf[index] for index in [i for i, x in enumerate(cls_pred) if int(x) == STOP_CLASS]]
+
+            # if len(stop_conf_list) > 0:
+            #     # TODO: check for stop sign only in the right half
+
+
+            #     if max(stop_conf_list) >= STOP_THRESHOLD:
+            #         _stop = stop_param['stop']
+            #     else:
+            #         # prediction below threshold => do nothing
+            #         pass
+            # else:
+            #     # stop sign not detected => do nothing
+            #     pass
 
             for index in range(len(cls_pred)):
                 predictions.append(
@@ -175,3 +188,19 @@ class UltralyticsDetector:
     def save_json(self, filename, prediction_dict) -> None:
         with open(filename, "w") as outfile: 
             json.dump(prediction_dict, outfile, indent=4)
+
+
+    def apply_cvfilter(self, conf, cls_pred, xyxy, img_shape_w) -> bool:
+        candidate = []
+        for index in range(len(conf)):
+            if cls_pred[index] == STOP_CLASS and conf[index] >= STOP_THRESHOLD and xyxy[index][0] >= int(img_shape_w / 2) + OFFSET:
+                area = (int(xyxy[index][2]) - int(xyxy[index][0])) * (int(xyxy[index][3]) - int(xyxy[index][1]))
+                if DEBUG:
+                    print('area: ', area)
+                if area >= STOP_AREA:
+                    candidate.append(conf[index])
+
+        if len(candidate) > 0:
+            return True
+        else:
+            return False
